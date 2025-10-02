@@ -1,0 +1,353 @@
+{
+  "name": "CHATBOTWHATSAPP",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "7481d824-e7d8-4d7f-a057-9eb0bf12ebe6",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        224,
+        -352
+      ],
+      "id": "d7f2c03c-a314-46e4-a4ce-7acd9e0d6d1d",
+      "name": "Webhook",
+      "webhookId": "7481d824-e7d8-4d7f-a057-9eb0bf12ebe6"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $('Dados Filtrados').item.json.Mensagem }}",
+        "options": {
+          "systemMessage": "=Responda qualquer mensagem. Seja educado.\n\nNome do cliente:  {{ $('Dados Filtrados').item.json['Nome da pessoa'] }}\n\nData atual: {{ $now }}"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        256,
+        -128
+      ],
+      "id": "fcd87347-a505-4e8e-aa20-546ad123b68d",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('Dados Filtrados').item.json['Quem mandou'] }}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        240,
+        80
+      ],
+      "id": "54f6ab68-9828-48d6-b763-2c6af3431ef1",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        96,
+        80
+      ],
+      "id": "b3d0672f-8bd0-4975-92e3-980faeb32c73",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "Dr6yQMDyIDzmm3GW",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a6489782-f6e1-4f6c-af3e-eba6d9711505",
+              "name": "Quem mandou",
+              "value": "={{ $json.body.sender }}",
+              "type": "string"
+            },
+            {
+              "id": "bf0db018-8c22-4c86-890c-a0d29cf0561f",
+              "name": "Instância",
+              "value": "={{ $json.body.data.instanceId }}",
+              "type": "string"
+            },
+            {
+              "id": "07edead0-f448-47fe-b534-8c47d52aff92",
+              "name": "Mensagem",
+              "value": "={{ $json.body.data.message.conversation }}",
+              "type": "string"
+            },
+            {
+              "id": "82cc76f7-b593-4164-8097-0a9835697cb2",
+              "name": "Id da Mensagem",
+              "value": "={{ $json.body.data.key.id }}",
+              "type": "string"
+            },
+            {
+              "id": "a9e80412-bdd0-40c2-a9ff-44260ea9113c",
+              "name": "Nome da pessoa",
+              "value": "={{ $json.body.data.pushName }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        480,
+        -352
+      ],
+      "id": "5007136b-be88-490b-a23f-dc7648373693",
+      "name": "Dados Filtrados"
+    },
+    {
+      "parameters": {
+        "toolDescription": "Retorna dados sobre as mensagens",
+        "url": "https://heytor-evolution-api.ycepgs.easypanel.host/manager/instance/3cf6345e-92a7-4792-8dd3-57d2d5907b3d",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.2,
+      "position": [
+        496,
+        32
+      ],
+      "id": "6ac0d788-c964-42a1-aec2-69cb9f292714",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "resource": "messages-api",
+        "instanceName": "={{ $('Webhook').item.json.body.instance }}",
+        "remoteJid": "={{ $('Dados Filtrados').item.json['Quem mandou'] }}",
+        "messageText": "={{ $json.output }}",
+        "options_message": {}
+      },
+      "type": "n8n-nodes-evolution-api.evolutionApi",
+      "typeVersion": 1,
+      "position": [
+        784,
+        -144
+      ],
+      "id": "c9fec058-2028-4127-984b-65895dc083e9",
+      "name": "Enviar texto",
+      "credentials": {
+        "evolutionApi": {
+          "id": "khvp8fvYqpocUXJ7",
+          "name": "Evolution account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "10b38cbf-17a1-489f-97a9-88115d55752d",
+              "leftValue": "=={{ $json[\"output\"][\"text\"] }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        560,
+        -128
+      ],
+      "id": "f8672a1c-c029-4434-b51d-187f0247bcd9",
+      "name": "If"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        800,
+        48
+      ],
+      "id": "84773e15-3c59-4f2e-a95e-00181ae65919",
+      "name": "No Operation, do nothing"
+    }
+  ],
+  "pinData": {
+    "Webhook": [
+      {
+        "json": {
+          "headers": {
+            "host": "heytor-n8n.ycepgs.easypanel.host",
+            "user-agent": "axios/1.10.0",
+            "content-length": "796",
+            "accept": "application/json, text/plain, */*",
+            "accept-encoding": "gzip, compress, deflate, br",
+            "content-type": "application/json",
+            "x-forwarded-for": "172.18.0.1",
+            "x-forwarded-host": "heytor-n8n.ycepgs.easypanel.host",
+            "x-forwarded-port": "443",
+            "x-forwarded-proto": "https",
+            "x-forwarded-server": "d9533f9158da",
+            "x-real-ip": "172.18.0.1"
+          },
+          "params": {},
+          "query": {},
+          "body": {
+            "event": "messages.upsert",
+            "instance": "Teste Chatbot Whatsapp",
+            "data": {
+              "key": {
+                "remoteJid": "120363160854995087@g.us",
+                "fromMe": true,
+                "id": "3A5BB185F5EDA19544E4",
+                "participant": "5521983948443@s.whatsapp.net"
+              },
+              "pushName": "Heytor Alves",
+              "status": "SERVER_ACK",
+              "message": {
+                "conversation": "Oi",
+                "messageContextInfo": {
+                  "messageSecret": "6hMuBKjn73qJ9EAua7pS5s6tp0uGAfMg5dTo0utmEYg="
+                }
+              },
+              "messageType": "conversation",
+              "messageTimestamp": 1757391971,
+              "instanceId": "3cf6345e-92a7-4792-8dd3-57d2d5907b3d",
+              "source": "ios"
+            },
+            "destination": "https://heytor-n8n.ycepgs.easypanel.host/webhook-test/7481d824-e7d8-4d7f-a057-9eb0bf12ebe6",
+            "date_time": "2025-09-09T01:26:12.294Z",
+            "sender": "5521983948443@s.whatsapp.net",
+            "server_url": "https://heytor-evolution-api.ycepgs.easypanel.host",
+            "apikey": "7E023055D5C6-45ED-B889-338CE6A54B22"
+          },
+          "webhookUrl": "https://heytor-n8n.ycepgs.easypanel.host/webhook-test/7481d824-e7d8-4d7f-a057-9eb0bf12ebe6",
+          "executionMode": "test"
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Dados Filtrados",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Dados Filtrados": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Enviar texto",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "No Operation, do nothing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "482b291a-4241-44c3-84cd-3cd4e0c673a0",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "5befcfaa85b864da207651bcf63cc906c722ece4fea9dc458c81aa3ea6ba9cd3"
+  },
+  "id": "f9cGYrS9SHEK42Xf",
+  "tags": []
+}
